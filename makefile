@@ -6,4 +6,7 @@ packed: clean default
 	
 clean:
 	rm -f htbp.exe
+	rm -f htbp.000
+	rm -f htbp.001
+	rm -f htbp.upx
 	
