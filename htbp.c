@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <limits.h>
+#include <sys/stat.h>
 
 #define HEADER_SIZE (sizeof(BSPHeader))
 #define LUMP_SIZE (sizeof(BSPLump))
@@ -9,7 +11,15 @@
 
 static char * const BSP_MAGIC = "VBSP";
 
-
+static char * const HTBP_HEADER = 
+    "############################\n"
+    "#                          #\n"
+    "# Hazard Team BSP Profiler #\n"
+    "#          By DKY          #\n"
+    "#                          #\n"
+    "############################"
+    ;
+    
 typedef struct {
     int32_t fileofs;
     int32_t filelen;
@@ -38,18 +48,48 @@ static inline void build_str_from_int32(char dest[5], uint32_t n) {
 }
 
 
-static void print_lump_bytes(BSPLump* p_lump) {
-    char* lumpBytes = (char*) p_lump;
+// static void print_lump_bytes(BSPLump* p_lump) {
+    // char* lumpBytes = (char*) p_lump;
     
-    for (size_t i=0; i<LUMP_SIZE; i++) {
-        unsigned char byte = lumpBytes[i];
+    // for (size_t i=0; i<LUMP_SIZE; i++) {
+        // unsigned char byte = lumpBytes[i];
         
-        printf("0x%x", byte);
+        // printf("0x%x", byte);
         
-        if (i < LUMP_SIZE - 1) {
-            printf(" ");
+        // if (i < LUMP_SIZE - 1) {
+            // printf(" ");
+        // }
+        
+    // }
+    
+// }
+
+
+static void get_filename(char filename[PATH_MAX], char filepath[PATH_MAX]) {
+    // Find the last slash position.
+    int lastSlashPos = 0;
+    for (size_t i=0; i<PATH_MAX && filepath[i]; i++) {
+        char c = filepath[i];
+        if (c == '\\') {
+            lastSlashPos = i;
         }
-        
+    }
+    
+    // Copy everything from the last slash onwards.
+    strncpy(filename, filepath + lastSlashPos, PATH_MAX);
+    
+}
+
+
+static off_t get_file_size(const char* filename) {
+    struct stat statStruct;
+    
+    if (stat(filename, &statStruct) == 0) {
+        return statStruct.st_size;
+    }
+    else {
+        perror("stat() error");
+        return -1;
     }
     
 }
@@ -59,11 +99,11 @@ int main(int argc, char* argv[]) {
     int rc = 0;
     
     // The name of the BSP file.
-    char* filename;
+    char* filepath;
     
     // Get the argument(s).
     if (argc > 1) {
-        filename = argv[1];
+        filepath = argv[1];
     }
     else {
         fprintf(stderr, "ERROR: You must provide at least 1 BSP file.\n");
@@ -74,17 +114,17 @@ int main(int argc, char* argv[]) {
     BSPHeader header;
     
     // Open the file for binary reading.
-    printf("Opening %s...\n", filename);
-    FILE* f = fopen(filename, "rb");
+    printf("Opening %s...\n", filepath);
+    FILE* f = fopen(filepath, "rb");
     if (f == NULL) {
-        perror("fopen() failure");
+        perror("fopen() error");
         return 1;
     }
     
     // Read the data into the header struct.
-    printf("Reading %s...\n", filename);
+    printf("Reading %s...\n", filepath);
     if (fread(&header, 1, HEADER_SIZE, f) != HEADER_SIZE) {
-        perror("fread() failure");
+        perror("fread() error");
         rc = 1;
         goto cleanup;   // This is a legitimate reason to use a goto...
     }
@@ -92,31 +132,44 @@ int main(int argc, char* argv[]) {
     char idStr[5];
     build_str_from_int32(idStr, header.ident);
     
+    // Check the 4-byte magic number to make sure this is a VBSP file.
     if (strcmp(idStr, BSP_MAGIC) != 0) {
-        fprintf(stderr, "ERROR: %s is not a Source Engine BSP file!\n");
+        fprintf(
+                stderr,
+                "ERROR: %s is not a Source Engine BSP file!\n",
+                filepath
+            );
         rc = 1;
         goto cleanup;
     }
     
-    printf("\nID: %s\n", idStr);
-    printf("Version: %d\n", header.version);
-    printf("Revision: %d\n", header.mapRevision);
+    char filename[PATH_MAX];
+    get_filename(filename, filepath);
     
+    printf("\n%s\n\n", HTBP_HEADER);
+    printf("== %s ==\n", filepath);
+    printf("\nID: %s\n", idStr);
+    printf("BSP Version: %d\n", header.version);
+    printf("Map Revision: %d\n", header.mapRevision);
+    
+    off_t totalFileSize = get_file_size(filepath);
+    if (totalFileSize == -1) {
+        fprintf(stderr, "ERROR: Failed to get file size.\n");
+        rc = 1;
+        goto cleanup;
+    }
+    
+    printf("Total file size: %d\n", totalFileSize);
+    
+    // Calculate size percentages for each lump.
     for (size_t i=0; i<HEADER_LUMPS; i++) {
         BSPLump lump = header.lumps[i];
         
-        printf("\nLump %d\n", i);
-        printf("Offset: %d\n", lump.fileofs);
-        printf("Length: %d\n", lump.filelen);
-        printf("Version: %d\n", lump.version);
-        printf("FourCC: '%.*s'\n", 4, lump.fourCC);
+        off_t size = (off_t) lump.filelen;
+        double percent = ((double) size / (double) totalFileSize) * 100.0;
         
-        printf("Lump Bytes: ");
-        print_lump_bytes(&lump);
-        printf("\n");
+        printf("Lump %d:\t\t%d\t\t(%f%%)\n", i, size, percent);
         
-        char throwaway;
-        scanf("%c", &throwaway);
     }
     
 cleanup:
