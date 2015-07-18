@@ -48,26 +48,9 @@ static inline void build_str_from_int32(char dest[5], uint32_t n) {
 }
 
 
-// static void print_lump_bytes(BSPLump* p_lump) {
-    // char* lumpBytes = (char*) p_lump;
-    
-    // for (size_t i=0; i<LUMP_SIZE; i++) {
-        // unsigned char byte = lumpBytes[i];
-        
-        // printf("0x%x", byte);
-        
-        // if (i < LUMP_SIZE - 1) {
-            // printf(" ");
-        // }
-        
-    // }
-    
-// }
-
-
 static void get_filename(char filename[PATH_MAX], char filepath[PATH_MAX]) {
     // Find the last slash position.
-    int lastSlashPos = 0;
+    int lastSlashPos = -1;
     for (size_t i=0; i<PATH_MAX && filepath[i]; i++) {
         char c = filepath[i];
         if (c == '\\') {
@@ -75,8 +58,8 @@ static void get_filename(char filename[PATH_MAX], char filepath[PATH_MAX]) {
         }
     }
     
-    // Copy everything from the last slash onwards.
-    strncpy(filename, filepath + lastSlashPos, PATH_MAX);
+    // Copy everything after the last slash.
+    strncpy(filename, filepath + lastSlashPos + 1, PATH_MAX);
     
 }
 
@@ -147,7 +130,7 @@ int main(int argc, char* argv[]) {
     get_filename(filename, filepath);
     
     printf("\n%s\n\n", HTBP_HEADER);
-    printf("== %s ==\n", filepath);
+    printf("== %s ==\n", filename);
     printf("\nID: %s\n", idStr);
     printf("BSP Version: %d\n", header.version);
     printf("Map Revision: %d\n", header.mapRevision);
@@ -159,7 +142,7 @@ int main(int argc, char* argv[]) {
         goto cleanup;
     }
     
-    printf("Total file size: %d\n", totalFileSize);
+    printf("Total file size: %d\n\n", totalFileSize);
     
     // Calculate size percentages for each lump.
     for (size_t i=0; i<HEADER_LUMPS; i++) {
@@ -171,6 +154,11 @@ int main(int argc, char* argv[]) {
         printf("Lump %d:\t\t%d\t\t(%f%%)\n", i, size, percent);
         
     }
+    
+    printf("Press [ENTER] to exit.\n");
+    
+    char throwaway;
+    scanf("%c", &throwaway);
     
 cleanup:
     fclose(f);

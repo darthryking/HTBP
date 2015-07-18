@@ -31,5 +31,10 @@
 # Debug files
 *.dSYM/
 
+# UPX stuff
+*.000
+*.001
+*.upx
+
 # Source Engine BSP files
 *.bsp
