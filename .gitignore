@@ -30,3 +30,6 @@
 
 # Debug files
 *.dSYM/
+
+# Source Engine BSP files
+*.bsp
