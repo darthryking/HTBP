@@ -20,6 +20,7 @@ static char * const HTBP_HEADER =
     "############################"
     ;
     
+    
 typedef struct {
     int32_t fileofs;
     int32_t filelen;
@@ -90,7 +91,8 @@ int main(int argc, char* argv[]) {
     }
     else {
         fprintf(stderr, "ERROR: You must provide at least 1 BSP file.\n");
-        return 1;
+        rc = 1;
+        goto end;   // This is a legitimate reason to use a goto...
     }
     
     // The BSP header that we will be loading.
@@ -101,15 +103,29 @@ int main(int argc, char* argv[]) {
     FILE* f = fopen(filepath, "rb");
     if (f == NULL) {
         perror("fopen() error");
-        return 1;
+        rc = 1;
+        goto end;
     }
     
     // Read the data into the header struct.
     printf("Reading %s...\n", filepath);
     if (fread(&header, 1, HEADER_SIZE, f) != HEADER_SIZE) {
-        perror("fread() error");
+        if (ferror(f)) {
+            fprintf(
+                    stderr,
+                    "ERROR: Could not read file %s.\n",
+                    filepath
+                );
+        }
+        else if (feof(f)) {
+            fprintf(
+                    stderr,
+                    "ERROR: %s has an invalid file size.\n",
+                    filepath
+                );
+        }
         rc = 1;
-        goto cleanup;   // This is a legitimate reason to use a goto...
+        goto cleanup;
     }
     
     char idStr[5];
@@ -155,13 +171,14 @@ int main(int argc, char* argv[]) {
         
     }
     
+cleanup:
+    fclose(f);
+    
+end:
     printf("Press [ENTER] to exit.\n");
     
     char throwaway;
     scanf("%c", &throwaway);
-    
-cleanup:
-    fclose(f);
     
     return rc;
 }
