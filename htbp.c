@@ -15,7 +15,7 @@ static char * const HTBP_HEADER =
     "############################\n"
     "#                          #\n"
     "# Hazard Team BSP Profiler #\n"
-    "#     Version 0.0.0 DEV    #\n"
+    "#     Version 0.0.1 DEV    #\n"
     "#          By DKY          #\n"
     "#                          #\n"
     "############################"
@@ -86,6 +86,9 @@ int main(int argc, char* argv[]) {
     // The name of the BSP file.
     char* filepath;
     
+    // Display the header.
+    printf("\n%s\n\n", HTBP_HEADER);
+    
     // Get the argument(s).
     if (argc > 1) {
         filepath = argv[1];
@@ -146,8 +149,7 @@ int main(int argc, char* argv[]) {
     char filename[PATH_MAX];
     get_filename(filename, filepath);
     
-    printf("\n%s\n\n", HTBP_HEADER);
-    printf("== %s ==\n", filename);
+    printf("\n== %s ==\n", filename);
     printf("\nID: %s\n", idStr);
     printf("BSP Version: %d\n", header.version);
     printf("Map Revision: %d\n", header.mapRevision);
