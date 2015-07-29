@@ -15,6 +15,7 @@ static char * const HTBP_HEADER =
     "############################\n"
     "#                          #\n"
     "# Hazard Team BSP Profiler #\n"
+    "#     Version 0.0.0 DEV    #\n"
     "#          By DKY          #\n"
     "#                          #\n"
     "############################"
