@@ -1,6 +1,3 @@
-# HTBP
-Hazard Team BSP Profiler
-
 Hazard Team BSP Profiler
 ==========
 
